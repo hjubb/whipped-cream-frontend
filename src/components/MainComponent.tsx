@@ -47,7 +47,7 @@ function getWCreamBalance(whipper: Whipper, address: string | null | undefined, 
 function getCreamAllowance(whipper: Whipper, address: string | null | undefined, library: Web3Provider) {
     return rxjs.scheduled(whipper.cream(), rxjs.asyncScheduler).pipe(
         mergeMap(creamAddress =>
-            getTokenAllowance(creamAddress, address!, whipper.address, library)
+            getTokenAllowance(creamAddress, whipper.address, address!, library)
         ),
         catchError(() => rxjs.of(BigNumber.from(0)))
     )
@@ -56,7 +56,7 @@ function getCreamAllowance(whipper: Whipper, address: string | null | undefined,
 function getWCreamAllowance(whipper: Whipper, address: string | null | undefined, library: Web3Provider) {
     return rxjs.scheduled(whipper.wCream(), rxjs.asyncScheduler).pipe(
         mergeMap(creamAddress =>
-            getTokenAllowance(creamAddress, address!, whipper.address, library)
+            getTokenAllowance(creamAddress, whipper.address, address!, library)
         ),
         catchError(() => rxjs.of(BigNumber.from(0)))
     )
@@ -75,8 +75,9 @@ function MainComponent() {
     const address = "0xE08f9A099Bc74522613CF7Dc18d07892CA09Bb1D";
 
     const {account, library} = useWeb3React<Web3Provider>();
+    const signer = library!.getSigner(account!);
     const blockSubject = new rxjs.Subject<number>();
-    const whipper = WhipperFactory.connect(address, library!);
+    const whipper = WhipperFactory.connect(address, signer);
 
     const [deployedWhipper, setDeployedWhipper] = useState<Whipper | undefined>(undefined);
     const [pendingReward, setPendingReward] = useState<BigNumber | undefined>(undefined);
@@ -93,7 +94,7 @@ function MainComponent() {
     const canHarvest = pendingReward ? pendingReward.gt(BigNumber.from(0)) : false;
 
     const clickHarvest = () => {
-        console.log("this where you harvest lol");
+        whipper.whip();
     };
 
     useEffect(() => {
@@ -118,22 +119,22 @@ function MainComponent() {
                     getCreamAllowance(whipper, account, library!),
                     getWCreamAllowance(whipper, account, library!),
                     rxjs.scheduled(whipper.cream(), rxjs.asyncScheduler).pipe<Erc20>(
-                        map((address) => Erc20Factory.connect(address, library!))
+                        map((address) => Erc20Factory.connect(address, signer))
                     ),
                     rxjs.scheduled(whipper.wCream(), rxjs.asyncScheduler).pipe<Erc20>(
-                        map((address) => Erc20Factory.connect(address, library!))
+                        map((address) => Erc20Factory.connect(address, signer))
                     )
                 ]);
             })
         ).subscribe(([whipper,pendingReward,cream,wCream,creamAllowance,wCreamAllowance,creamContract,wCreamContract]) => {
-            setDeployedWhipper(whipper);
-            setPendingReward(pendingReward);
-            setUserCream(cream);
-            setUserWCream(wCream);
-            setAllowanceCream(creamAllowance);
-            setAllowanceWCream(wCreamAllowance);
-            setCreamContract(creamContract);
-            setWCreamContract(wCreamContract);
+            setDeployedWhipper(whipper as Whipper);
+            setPendingReward(pendingReward as BigNumber);
+            setUserCream(cream as BigNumber);
+            setUserWCream(wCream as BigNumber);
+            setAllowanceCream(creamAllowance as BigNumber);
+            setAllowanceWCream(wCreamAllowance as BigNumber);
+            setCreamContract(creamContract as Erc20);
+            setWCreamContract(wCreamContract as Erc20);
         });
 
         return () => {
@@ -158,7 +159,7 @@ function MainComponent() {
             console.log("trying to approve cream in a bad way thinking emoji?")
             return;
         }
-        creamContract["approve(address,uint256)"](whipper.address, userCream);
+        (creamContract["approve(address,uint256)"](whipper.address, userCream));
     };
 
     const approveWCream = () => {
@@ -167,6 +168,14 @@ function MainComponent() {
         }
         wCreamContract["approve(address,uint256)"](whipper.address, userWCream);
     };
+
+    const depositAll = () => {
+        whipper.depositAll();
+    }
+
+    const withdrawAll = () => {
+        whipper.withdrawAll();
+    }
 
     return (
         <>
@@ -184,7 +193,7 @@ function MainComponent() {
                   title={"Your CREAM balance available"}
                   content={userCream ? "[" + formatUnits(userCream).toString() + "]" : ""}
             />
-            {userCream && allowanceCream.lt(userCream) &&
+            {userCream && allowanceCream.lt(userCream) && userCream.gt(BigNumber.from(0)) &&
             <>
                 <Button enabled={true} title={"APPROVE CREAM SPENDING"} clickFunction={() => approveCream()}/>
                 <br/>
@@ -198,12 +207,15 @@ function MainComponent() {
             <Button title="DEPOSIT"/>
             <br/>
             <br/>
-            <Button title="DEPOSIT ALL"/>
+            <Button title="DEPOSIT ALL"
+                    enabled={userCream && allowanceCream && allowanceCream.gt(userCream)}
+                    clickFunction={()=>depositAll()}
+            />
             <Data isLoading={!pendingReward}
                   title={"Your whipped cream balance (wCREAM)"}
                   content={userWCream ? "[" + formatUnits(userWCream).toString() + "]" : ""}
             />
-            {userWCream && allowanceWCream.lt(userWCream) &&
+            {userWCream && allowanceWCream.lt(userWCream) && userWCream.gt(BigNumber.from(0)) &&
             <>
                 <Button enabled={true} title={"APPROVE wCREAM SPENDING"} clickFunction={() => approveWCream()}/>
                 <br/>
@@ -217,7 +229,10 @@ function MainComponent() {
             <Button title="WITHDRAW"/>
             <br/>
             <br/>
-            <Button title="WITHDRAW ALL"/>
+            <Button title="WITHDRAW ALL"
+                    enabled={userWCream && allowanceWCream && allowanceWCream.gt(userWCream)}
+                    clickFunction={()=>withdrawAll()}
+            />
         </>
     );
 }

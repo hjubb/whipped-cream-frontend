@@ -25,12 +25,13 @@ a {
     }
 }
 
-@media (prefers-color-scheme: light) {
-    body {
-        color: #32333D;
-        background-color: #ffffff;
-    }
-    a {
-        color: #1aba81;
-    }
-}
+/*light mode lol who needs it*/
+/*@media (prefers-color-scheme: light) {*/
+/*    body {*/
+/*        color: #32333D;*/
+/*        background-color: #ffffff;*/
+/*    }*/
+/*    a {*/
+/*        color: #1aba81;*/
+/*    }*/
+/*}*/
