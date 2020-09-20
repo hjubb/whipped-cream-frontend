@@ -1,5 +1,14 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+Pls don't criticise my noob react code this was hacked together in about a day.
+
+deposit / withdraw specific amounts not implemented yet just go hard or go home tbqh or send me a PR.
+
+## Built using:
+create-react-app, typescript, rxjs, ethers-v5, typechain, web3-react, ahh probably some other stuff it's mostly hand written horrible code lol
+
+
+
 ## BUILD
 to build it you'll have to run `yarn generate-contract-types` and then manually **delete** the `./src/contracts/index.ts` it generates for some reason (empty) because react throws a fit for things with no module or something
 
