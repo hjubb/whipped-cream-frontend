@@ -4,6 +4,10 @@ Pls don't criticise my noob react code this was hacked together in about a day.
 
 deposit / withdraw specific amounts not implemented yet just go hard or go home tbqh or send me a PR.
 
+Find it @ https://whip.ibolpap.finance
+
+Find the contract(s) @ [whipped cream contracts](https://www.github.com/hjubb/whipped-cream)
+
 ## Built using:
 create-react-app, typescript, rxjs, ethers-v5, typechain, web3-react, ahh probably some other stuff it's mostly hand written horrible code lol
 
