@@ -1,5 +1,8 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## BUILD
+to build it you'll have to run `yarn generate-contract-types` and then manually **delete** the `./src/contracts/index.ts` it generates for some reason (empty) because react throws a fit for things with no module or something
+
 ## Available Scripts
 
 In the project directory, you can run:

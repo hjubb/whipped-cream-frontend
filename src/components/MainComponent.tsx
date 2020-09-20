@@ -126,7 +126,7 @@ function MainComponent() {
                     )
                 ]);
             })
-        ).subscribe(([whipper,pendingReward,cream,wCream,creamAllowance,wCreamAllowance,creamContract,wCreamContract]) => {
+        ).subscribe(([whipper, pendingReward, cream, wCream, creamAllowance, wCreamAllowance, creamContract, wCreamContract]) => {
             setDeployedWhipper(whipper as Whipper);
             setPendingReward(pendingReward as BigNumber);
             setUserCream(cream as BigNumber);
@@ -179,6 +179,9 @@ function MainComponent() {
 
     return (
         <>
+            <h3>WARNING! THIS SOFTWARE IS IN BETA! PLEASE REVIEW THE CONTRACTS AND DYOR BEFORE INVESTING SUMS OF MONEY
+                YOU CAN'T AFFORD TO LOSE</h3>
+            <h4>be smart be safe but most importantly be ur self xx :) </h4>
             <Data isLoading={!deployedWhipper}
                   title={"Deployed whipper contract"}
                   content={deployedWhipper?.address}
@@ -209,7 +212,7 @@ function MainComponent() {
             <br/>
             <Button title="DEPOSIT ALL"
                     enabled={userCream && allowanceCream && allowanceCream.gt(userCream)}
-                    clickFunction={()=>depositAll()}
+                    clickFunction={() => depositAll()}
             />
             <Data isLoading={!pendingReward}
                   title={"Your whipped cream balance (wCREAM)"}
@@ -231,8 +234,15 @@ function MainComponent() {
             <br/>
             <Button title="WITHDRAW ALL"
                     enabled={userWCream && allowanceWCream && allowanceWCream.gt(userWCream)}
-                    clickFunction={()=>withdrawAll()}
+                    clickFunction={() => withdrawAll()}
             />
+            <br/>
+            <br/>
+            <a href="https://www.github.com/hjubb/whipped-cream">CHECK OUT CONTRACT ON GITHUB</a> . <a href="https://www.github.com/hjubb/whipped-cream-frontend">CHECK OUT FRONTEND ON GITHUB</a>
+            <br/>
+            <br/>
+            <a href="https://www.twitter.com/harris_s0n">@harris_s0n on twitter</a>
+            <p style={{fontSize: "x-small"}}>pls don't dm me for help if you buggered yourself up instead of being careful</p>
         </>
     );
 }
