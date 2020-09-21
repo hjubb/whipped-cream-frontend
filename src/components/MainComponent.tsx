@@ -243,6 +243,9 @@ function MainComponent() {
             <br/>
             <a href="https://www.twitter.com/harris_s0n">@harris_s0n on twitter</a>
             <p style={{fontSize: "x-small"}}>pls don't dm me for help if you buggered yourself up instead of being careful</p>
+            <br/>
+            <br/>
+            <div>Icons made by <a href="http://www.freepik.com/" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon"> www.flaticon.com</a></div>
         </>
     );
 }
