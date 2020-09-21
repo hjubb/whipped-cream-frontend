@@ -211,7 +211,7 @@ function MainComponent() {
             <br/>
             <br/>
             <Button title="DEPOSIT ALL"
-                    enabled={userCream && allowanceCream && allowanceCream.gt(userCream)}
+                    enabled={userCream && allowanceCream && userCream.gt(BigNumber.from(0)) && allowanceCream.gte(userCream)}
                     clickFunction={() => depositAll()}
             />
             <Data isLoading={!pendingReward}
@@ -233,7 +233,7 @@ function MainComponent() {
             <br/>
             <br/>
             <Button title="WITHDRAW ALL"
-                    enabled={userWCream && allowanceWCream && allowanceWCream.gt(userWCream)}
+                    enabled={userWCream && allowanceWCream && userWCream.gt(BigNumber.from(0)) && allowanceWCream.gte(userWCream)}
                     clickFunction={() => withdrawAll()}
             />
             <br/>
