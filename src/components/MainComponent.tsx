@@ -9,7 +9,7 @@ import Data from "./Data";
 import {StakingRewardsLock} from "../contracts/StakingRewardsLock";
 import {BigNumber} from "ethers";
 import {StakingRewardsLockFactory} from "../contracts/StakingRewardsLockFactory";
-import {formatUnits} from "@ethersproject/units";
+import {formatUnits, parseUnits} from "@ethersproject/units";
 import Button from "./Button";
 import {Erc20Factory} from "../contracts/Erc20Factory";
 import {Erc20} from "../contracts/Erc20";
@@ -88,6 +88,9 @@ function MainComponent() {
     const [allowanceCream, setAllowanceCream] = useState<BigNumber>(BigNumber.from(0));
     const [allowanceWCream, setAllowanceWCream] = useState<BigNumber>(BigNumber.from(0));
 
+    const [withdraw, setWithdraw] = useState<BigNumber>(BigNumber.from(0));
+    const [deposit, setDeposit] = useState<BigNumber>(BigNumber.from(0));
+
     const [creamContract, setCreamContract] = useState<Erc20 | undefined>(undefined);
     const [wCreamContract, setWCreamContract] = useState<Erc20 | undefined>(undefined);
 
@@ -142,12 +145,20 @@ function MainComponent() {
         };
     }, [account, whipper, library, blockSubject])
 
-    const checkDepositAmount = (value: number | undefined) => {
-
+    const checkDepositAmount = (value: string | undefined) => {
+        if (!value) {
+            setDeposit(BigNumber.from(0));
+            return;
+        }
+        setDeposit(BigNumber.from(parseUnits(value, "ether") ?? 0));
     };
 
-    const checkWithdrawAmount = (value: number | undefined) => {
-
+    const checkWithdrawAmount = (value: string | undefined) => {
+        if (!value) {
+            setWithdraw(BigNumber.from(0));
+            return;
+        }
+        setWithdraw(BigNumber.from(parseUnits(value, "ether")));
     };
 
     const openAddress = (address: string) => {
@@ -171,11 +182,20 @@ function MainComponent() {
 
     const depositAll = () => {
         whipper.depositAll();
-    }
+    };
 
     const withdrawAll = () => {
         whipper.withdrawAll();
-    }
+    };
+
+    const depositAmount = (amount: BigNumber) => {
+        whipper.deposit(amount);
+    };
+
+    const withdrawAmount = (amount: BigNumber) => {
+        whipper.withdraw(amount);
+    };
+
 
     return (
         <>
@@ -205,9 +225,11 @@ function MainComponent() {
             <input type="number"
                    placeholder="Deposit amount"
                    name="deposit"
-                   onChange={(e) => checkDepositAmount(e.target.valueAsNumber)}
+                   onChange={(e) => checkDepositAmount(e.target.value)}
             />
-            <Button title="DEPOSIT"/>
+            <Button title="DEPOSIT"
+                    enabled={deposit.gt(BigNumber.from(0)) && (userCream?.gte(deposit) ?? false)}
+                    clickFunction={()=>depositAmount(deposit)}/>
             <br/>
             <br/>
             <Button title="DEPOSIT ALL"
@@ -227,9 +249,11 @@ function MainComponent() {
             <input type="number"
                    placeholder="Withdraw amount"
                    name="withdraw"
-                   onChange={(e) => checkWithdrawAmount(e.target.valueAsNumber)}
+                   onChange={(e) => checkWithdrawAmount(e.target.value)}
             />
-            <Button title="WITHDRAW"/>
+            <Button title="WITHDRAW"
+                    enabled={withdraw.gt(BigNumber.from(0)) && (userWCream?.gte(withdraw) ?? false)}
+                    clickFunction={()=>withdrawAmount(withdraw)}/>
             <br/>
             <br/>
             <Button title="WITHDRAW ALL"
@@ -238,14 +262,17 @@ function MainComponent() {
             />
             <br/>
             <br/>
-            <a href="https://www.github.com/hjubb/whipped-cream">CHECK OUT CONTRACT ON GITHUB</a> . <a href="https://www.github.com/hjubb/whipped-cream-frontend">CHECK OUT FRONTEND ON GITHUB</a>
+            <a href="https://www.github.com/hjubb/whipped-cream">CHECK OUT CONTRACT ON GITHUB</a> .
+            <a href="https://www.github.com/hjubb/whipped-cream-frontend">CHECK OUT FRONTEND ON GITHUB</a>
             <br/>
             <br/>
             <a href="https://www.twitter.com/harris_s0n">@harris_s0n on twitter</a>
-            <p style={{fontSize: "x-small"}}>pls don't dm me for help if you buggered yourself up instead of being careful</p>
+            <p style={{fontSize: "x-small"}}>pls don't dm me for help if you buggered yourself up instead of being
+                careful</p>
             <br/>
             <br/>
-            <div>Icons made by <a href="http://www.freepik.com/" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon"> www.flaticon.com</a></div>
+            <div>Icons made by <a href="http://www.freepik.com/" title="Freepik">Freepik</a> from <a
+                href="https://www.flaticon.com/" title="Flaticon"> www.flaticon.com</a></div>
         </>
     );
 }
