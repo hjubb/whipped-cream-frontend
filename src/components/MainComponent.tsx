@@ -13,6 +13,7 @@ import {formatUnits, parseUnits} from "@ethersproject/units";
 import Button from "./Button";
 import {Erc20Factory} from "../contracts/Erc20Factory";
 import {Erc20} from "../contracts/Erc20";
+import Alert from "./Alert";
 
 function resolvePendingReward(address: string, rewards: StakingRewardsLock): Promise<BigNumber> {
     return rewards.earned(address)
@@ -23,6 +24,12 @@ function getPendingRewardsObservable(whipper: Whipper, library: Web3Provider) {
         mergeMap(poolAddress =>
             resolvePendingReward(whipper.address, StakingRewardsLockFactory.connect(poolAddress, library!))
         )
+    );
+}
+
+function getRewardEndTime(whipper:Whipper, library: Web3Provider) {
+    return rxjs.scheduled(whipper.creamPool(), rxjs.asyncScheduler).pipe(
+        mergeMap(poolAddress=>StakingRewardsLockFactory.connect(poolAddress,library).periodFinish())
     );
 }
 
@@ -94,7 +101,11 @@ function MainComponent() {
     const [creamContract, setCreamContract] = useState<Erc20 | undefined>(undefined);
     const [wCreamContract, setWCreamContract] = useState<Erc20 | undefined>(undefined);
 
-    const canHarvest = pendingReward ? pendingReward.gt(BigNumber.from(0)) : false;
+    const [breaker, setBreaker] = useState<boolean>(false);
+    const [endTime, setEndTime] = useState<BigNumber>(BigNumber.from(0));
+
+    const canHarvest = breaker && pendingReward ? pendingReward.gt(BigNumber.from(0)) : false;
+    const canDeposit = false;
 
     const clickHarvest = () => {
         whipper.whip();
@@ -126,10 +137,12 @@ function MainComponent() {
                     ),
                     rxjs.scheduled(whipper.wCream(), rxjs.asyncScheduler).pipe<Erc20>(
                         map((address) => Erc20Factory.connect(address, signer))
-                    )
+                    ),
+                    rxjs.scheduled(whipper.breaker(), rxjs.asyncScheduler),
+                    getRewardEndTime(whipper, library!),
                 ]);
             })
-        ).subscribe(([whipper, pendingReward, cream, wCream, creamAllowance, wCreamAllowance, creamContract, wCreamContract]) => {
+        ).subscribe(([whipper, pendingReward, cream, wCream, creamAllowance, wCreamAllowance, creamContract, wCreamContract, breaker, endTime]) => {
             setDeployedWhipper(whipper as Whipper);
             setPendingReward(pendingReward as BigNumber);
             setUserCream(cream as BigNumber);
@@ -138,6 +151,8 @@ function MainComponent() {
             setAllowanceWCream(wCreamAllowance as BigNumber);
             setCreamContract(creamContract as Erc20);
             setWCreamContract(wCreamContract as Erc20);
+            setBreaker(breaker as boolean);
+            setEndTime((endTime as BigNumber).mul(BigNumber.from(1000))); // endTime from staking rewards is unix seconds
         });
 
         return () => {
@@ -212,11 +227,17 @@ function MainComponent() {
                   content={pendingReward ? "[" + formatUnits(pendingReward).toString() + "] (caller gets 5% [" + formatUnits(pendingReward.mul(5).div(100)).toString() + "])" : ""}
             />
             <Button enabled={canHarvest} title={"WHIP"} clickFunction={clickHarvest}/>
+            <Alert title="Whip enabled until new contract deployed around 11pm UTC+8 22 Sep"/>
+            <Alert title="final whip will be manual before current whipper disabled"/>
+            <p><a className="alert" href="https://twitter.com/CreamdotFinance/status/1308069163261280256">Cream announcement</a></p>
+            {!canDeposit &&
+            <Alert title="Deposits disabled until new crCREAM pool contract is deployed" />
+            }
             <Data isLoading={!userCream}
                   title={"Your CREAM balance available"}
                   content={userCream ? "[" + formatUnits(userCream).toString() + "]" : ""}
             />
-            {userCream && allowanceCream.lt(userCream) && userCream.gt(BigNumber.from(0)) &&
+            {breaker && canDeposit && userCream && allowanceCream.lt(userCream) && userCream.gt(BigNumber.from(0)) &&
             <>
                 <Button enabled={true} title={"APPROVE CREAM SPENDING"} clickFunction={() => approveCream()}/>
                 <br/>
@@ -228,12 +249,12 @@ function MainComponent() {
                    onChange={(e) => checkDepositAmount(e.target.value)}
             />
             <Button title="DEPOSIT"
-                    enabled={deposit.gt(BigNumber.from(0)) && (userCream?.gte(deposit) ?? false)}
+                    enabled={canDeposit && deposit.gt(BigNumber.from(0)) && (userCream?.gte(deposit) ?? false)}
                     clickFunction={()=>depositAmount(deposit)}/>
             <br/>
             <br/>
             <Button title="DEPOSIT ALL"
-                    enabled={userCream && allowanceCream && userCream.gt(BigNumber.from(0)) && allowanceCream.gte(userCream)}
+                    enabled={breaker && !canDeposit && userCream && allowanceCream && userCream.gt(BigNumber.from(0)) && allowanceCream.gte(userCream)}
                     clickFunction={() => depositAll()}
             />
             <Data isLoading={!pendingReward}
@@ -262,7 +283,7 @@ function MainComponent() {
             />
             <br/>
             <br/>
-            <a href="https://www.github.com/hjubb/whipped-cream">CHECK OUT CONTRACT ON GITHUB</a> .
+            <a href="https://www.github.com/hjubb/whipped-cream">CHECK OUT CONTRACT ON GITHUB</a>.
             <a href="https://www.github.com/hjubb/whipped-cream-frontend">CHECK OUT FRONTEND ON GITHUB</a>
             <br/>
             <br/>

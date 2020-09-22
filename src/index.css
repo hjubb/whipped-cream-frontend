@@ -4,6 +4,10 @@ pre {
     font-family: 'VT323', monospace;
 }
 
+.alert {
+    color: #ff7961
+}
+
 body {
     font-family: 'VT323', monospace;
     font-size: x-large;
