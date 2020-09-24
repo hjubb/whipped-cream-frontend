@@ -105,7 +105,7 @@ function MainComponent() {
     const [endTime, setEndTime] = useState<BigNumber>(BigNumber.from(0));
 
     const canHarvest = breaker && pendingReward ? pendingReward.gt(BigNumber.from(0)) : false;
-    const canDeposit = false;
+    const canDeposit = breaker;
 
     const clickHarvest = () => {
         whipper.whip();
@@ -227,12 +227,6 @@ function MainComponent() {
                   content={pendingReward ? "[" + formatUnits(pendingReward).toString() + "] (caller gets 5% [" + formatUnits(pendingReward.mul(5).div(100)).toString() + "])" : ""}
             />
             <Button enabled={canHarvest} title={"WHIP"} clickFunction={clickHarvest}/>
-            <Alert title="Whip enabled until new contract deployed around 11pm UTC+8 22 Sep"/>
-            <Alert title="final whip will be manual before current whipper disabled"/>
-            <p><a className="alert" href="https://twitter.com/CreamdotFinance/status/1308069163261280256">Cream announcement</a></p>
-            {!canDeposit &&
-            <Alert title="Deposits disabled until new crCREAM pool contract is deployed" />
-            }
             <Data isLoading={!userCream}
                   title={"Your CREAM balance available"}
                   content={userCream ? "[" + formatUnits(userCream).toString() + "]" : ""}
