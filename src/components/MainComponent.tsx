@@ -226,6 +226,8 @@ function MainComponent() {
                   title={"Pending CREAM to whip"}
                   content={pendingReward ? "[" + formatUnits(pendingReward).toString() + "] (caller gets 5% [" + formatUnits(pendingReward.mul(5).div(100)).toString() + "])" : ""}
             />
+            <Alert title={"All whip and deposits will reset the (currently) 7 day time lock preventing withdrawals, set by CREAM's crCREAM deposit pool"}/>
+            <Alert title={"time lock might be removed by CREAM team after / close to rewards finish, deposits / whipping can be locked before then"}/>
             <Button enabled={canHarvest} title={"WHIP"} clickFunction={clickHarvest}/>
             <Data isLoading={!userCream}
                   title={"Your CREAM balance available"}
