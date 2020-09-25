@@ -3,7 +3,8 @@ import {Web3Provider} from "@ethersproject/providers";
 import {useWeb3React} from "@web3-react/core";
 import {WhipperFactory} from "../contracts/WhipperFactory";
 import * as rxjs from 'rxjs';
-import {catchError, map, mergeMap} from "rxjs/operators";
+import {ajax} from 'rxjs/ajax';
+import {catchError, map, mergeMap, onErrorResumeNext} from "rxjs/operators";
 import {Whipper} from "../contracts/Whipper";
 import Data from "./Data";
 import {StakingRewardsLock} from "../contracts/StakingRewardsLock";
@@ -14,6 +15,7 @@ import Button from "./Button";
 import {Erc20Factory} from "../contracts/Erc20Factory";
 import {Erc20} from "../contracts/Erc20";
 import Alert from "./Alert";
+import {observable, ObservableInput} from "rxjs";
 
 function resolvePendingReward(address: string, rewards: StakingRewardsLock): Promise<BigNumber> {
     return rewards.earned(address)
@@ -80,11 +82,14 @@ function getTokenAllowance(tokenAddress: string, address: string, spender: strin
 function MainComponent() {
 
     const address = "0xd5b9ce8d74c6a606b8215bf865fe7befede2cebb";
+    const priceUrl = "https://api.coingecko.com/api/v3/simple/token_price/ethereum?contract_addresses=0x2ba592f78db6436527729929aaf6c908497cb200&vs_currencies=usd";
 
     const {account, library} = useWeb3React<Web3Provider>();
     const signer = library!.getSigner(account!);
     const blockSubject = new rxjs.Subject<number>();
     const whipper = WhipperFactory.connect(address, signer);
+
+    const [price, setPrice] = useState<number | undefined>(undefined);
 
     const [deployedWhipper, setDeployedWhipper] = useState<Whipper | undefined>(undefined);
     const [pendingReward, setPendingReward] = useState<BigNumber | undefined>(undefined);
@@ -126,6 +131,16 @@ function MainComponent() {
             mergeMap(() => rxjs.scheduled(whipper.deployed(), rxjs.asyncScheduler)),
             mergeMap(whipper => {
                 return rxjs.combineLatest([
+                    ajax(priceUrl).pipe(
+                        map(res=>{
+                            const responseObject = res.response
+                            return responseObject["0x2ba592f78db6436527729929aaf6c908497cb200"].usd as number;
+                        }),
+                        catchError((err)=>{
+                            console.log("error occurred in stream ",err);
+                            return rxjs.from(0.0 as any);
+                        })
+                    ),
                     rxjs.of(whipper),
                     getPendingRewardsObservable(whipper, library!),
                     getCreamBalance(whipper, account, library!),
@@ -142,7 +157,8 @@ function MainComponent() {
                     getRewardEndTime(whipper, library!),
                 ]);
             })
-        ).subscribe(([whipper, pendingReward, cream, wCream, creamAllowance, wCreamAllowance, creamContract, wCreamContract, breaker, endTime]) => {
+        ).subscribe(([price, whipper, pendingReward, cream, wCream, creamAllowance, wCreamAllowance, creamContract, wCreamContract, breaker, endTime]) => {
+            setPrice(price as number | undefined);
             setDeployedWhipper(whipper as Whipper);
             setPendingReward(pendingReward as BigNumber);
             setUserCream(cream as BigNumber);
@@ -211,6 +227,10 @@ function MainComponent() {
         whipper.withdraw(amount);
     };
 
+    const getValue = (price: number, amount: BigNumber) => {
+        return (amount.toNumber() * 1e-18 * price).toPrecision(4);
+    }
+
 
     return (
         <>
@@ -222,16 +242,16 @@ function MainComponent() {
                   content={deployedWhipper?.address}
                   link={() => openAddress(deployedWhipper!.address)}
             />
-            <Data isLoading={!pendingReward}
+            <Data isLoading={!pendingReward && !price}
                   title={"Pending CREAM to whip"}
-                  content={pendingReward ? "[" + formatUnits(pendingReward).toString() + "] (caller gets 5% [" + formatUnits(pendingReward.mul(5).div(100)).toString() + "])" : ""}
+                  content={(pendingReward && price) ? "[" + formatUnits(pendingReward).toString() + ", ~$"+getValue(price,pendingReward)+"] (caller gets 5% [" + formatUnits(pendingReward.mul(5).div(100)).toString() + ", ~$"+getValue(price,pendingReward.mul(5).div(100))+"])" : ""}
             />
             <Alert title={"All whip and deposits will reset the (currently) 7 day time lock preventing withdrawals, set by CREAM's crCREAM deposit pool"}/>
             <Alert title={"time lock might be removed by CREAM team after / close to rewards finish, deposits / whipping can be locked before then"}/>
             <Button enabled={canHarvest} title={"WHIP"} clickFunction={clickHarvest}/>
             <Data isLoading={!userCream}
                   title={"Your CREAM balance available"}
-                  content={userCream ? "[" + formatUnits(userCream).toString() + "]" : ""}
+                  content={userCream && price ? "[" + formatUnits(userCream).toString() + "] : ~$"+ getValue(price,userCream): ""}
             />
             {breaker && canDeposit && userCream && allowanceCream.lt(userCream) && userCream.gt(BigNumber.from(0)) &&
             <>
