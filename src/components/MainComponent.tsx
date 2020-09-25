@@ -245,12 +245,12 @@ function MainComponent() {
                    onChange={(e) => checkDepositAmount(e.target.value)}
             />
             <Button title="DEPOSIT"
-                    enabled={canDeposit && deposit.gt(BigNumber.from(0)) && (userCream?.gte(deposit) ?? false)}
+                    enabled={canDeposit && deposit.gt(BigNumber.from(0)) && (userCream?.gte(deposit) ?? false) && allowanceCream.gte(deposit)}
                     clickFunction={()=>depositAmount(deposit)}/>
             <br/>
             <br/>
             <Button title="DEPOSIT ALL"
-                    enabled={breaker && !canDeposit && userCream && allowanceCream && userCream.gt(BigNumber.from(0)) && allowanceCream.gte(userCream)}
+                    enabled={canDeposit && userCream && allowanceCream && userCream.gt(BigNumber.from(0)) && allowanceCream.gte(userCream)}
                     clickFunction={() => depositAll()}
             />
             <Data isLoading={!pendingReward}
@@ -269,7 +269,7 @@ function MainComponent() {
                    onChange={(e) => checkWithdrawAmount(e.target.value)}
             />
             <Button title="WITHDRAW"
-                    enabled={withdraw.gt(BigNumber.from(0)) && (userWCream?.gte(withdraw) ?? false)}
+                    enabled={withdraw.gt(BigNumber.from(0)) && (userWCream?.gte(withdraw) ?? false) && allowanceWCream.gte(withdraw)}
                     clickFunction={()=>withdrawAmount(withdraw)}/>
             <br/>
             <br/>
