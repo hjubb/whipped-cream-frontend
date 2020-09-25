@@ -228,7 +228,7 @@ function MainComponent() {
     };
 
     const getValue = (price: number, amount: BigNumber) => {
-        return (amount.toNumber() * 1e-18 * price).toPrecision(4);
+        return (amount.mul(1e-18).toNumber() * price).toPrecision(4);
     }
 
 
