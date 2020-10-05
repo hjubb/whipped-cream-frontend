@@ -15,7 +15,7 @@ import Button from "./Button";
 import {Erc20Factory} from "../contracts/Erc20Factory";
 import {Erc20} from "../contracts/Erc20";
 import Alert from "./Alert";
-import {observable, ObservableInput} from "rxjs";
+import bigDecimal from "js-big-decimal";
 
 function resolvePendingReward(address: string, rewards: StakingRewardsLock): Promise<BigNumber> {
     return rewards.earned(address)
@@ -133,8 +133,9 @@ function MainComponent() {
                 return rxjs.combineLatest([
                     ajax(priceUrl).pipe(
                         map(res=>{
-                            const responseObject = res.response
-                            return responseObject["0x2ba592f78db6436527729929aaf6c908497cb200"].usd as number;
+                            const responseObject = res.response["0x2ba592f78db6436527729929aaf6c908497cb200"].usd;
+                            console.log(responseObject);
+                            return responseObject as number;
                         }),
                         catchError((err)=>{
                             console.log("error occurred in stream ",err);
@@ -227,8 +228,8 @@ function MainComponent() {
         whipper.withdraw(amount);
     };
 
-    const getValue = (price: number, amount: BigNumber) => {
-        return (amount.mul(1e-18).toNumber() * price).toPrecision(4);
+    const getValue = (price: number, amount: bigDecimal) => {
+        return amount.multiply(new bigDecimal(price)).getValue()
     }
 
 
@@ -244,14 +245,14 @@ function MainComponent() {
             />
             <Data isLoading={!pendingReward && !price}
                   title={"Pending CREAM to whip"}
-                  content={(pendingReward && price) ? "[" + formatUnits(pendingReward).toString() + ", ~$"+getValue(price,pendingReward)+"] (caller gets 5% [" + formatUnits(pendingReward.mul(5).div(100)).toString() + ", ~$"+getValue(price,pendingReward.mul(5).div(100))+"])" : ""}
+                  content={(pendingReward && price) ? "[" + formatUnits(pendingReward).toString() + ", ~$"+getValue(price,new bigDecimal(formatUnits(pendingReward)))+"] (caller gets 5% [" + formatUnits(pendingReward.mul(5).div(100)).toString() + ", ~$"+getValue(price,new bigDecimal(formatUnits(pendingReward.mul(5).div(100))))+"])" : ""}
             />
             <Alert title={"All whip and deposits will reset the (currently) 7 day time lock preventing withdrawals, set by CREAM's crCREAM deposit pool"}/>
             <Alert title={"time lock might be removed by CREAM team after / close to rewards finish, deposits / whipping can be locked before then"}/>
             <Button enabled={canHarvest} title={"WHIP"} clickFunction={clickHarvest}/>
             <Data isLoading={!userCream}
                   title={"Your CREAM balance available"}
-                  content={userCream && price ? "[" + formatUnits(userCream).toString() + "] : ~$"+ getValue(price,userCream): ""}
+                  content={userCream && price ? "[" + formatUnits(userCream).toString() + "] : ~$"+ getValue(price,new bigDecimal(formatUnits(userCream))): ""}
             />
             {breaker && canDeposit && userCream && allowanceCream.lt(userCream) && userCream.gt(BigNumber.from(0)) &&
             <>
